@@ -1,4 +1,3 @@
-#!/usr/bin/python
 '''Versioning and management of files'''
 import pickle
 import hashlib
@@ -6,7 +5,7 @@ import argparse
 import os
 import sys
 from datetime import datetime
-import readline
+import readline  # used for nice input handling
 
 BLOCK_SIZE = 65536  # The size of each read from the file
 
@@ -50,7 +49,8 @@ def find_info(opt):
 
 
 def print_info(info_dict):
-    print(f"{info_dict['fname']} ({info_dict['date']}): {info_dict['note']}")
+    print(f"{info_dict['fname']} ({info_dict['date']}):"
+          f" {info_dict['note']}")
 
 
 def process_single(fname, info):
