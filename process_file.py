@@ -1,12 +1,13 @@
-#!/usr/bin/python
 '''Versioning and management of files'''
 import pickle
 import hashlib
 import argparse
 import os
 import sys
+import json
+import logging
 from datetime import datetime
-import readline
+import readline  # used for nice input handling
 
 BLOCK_SIZE = 65536  # The size of each read from the file
 
@@ -23,25 +24,36 @@ def calc_sum(fname):
     return file_hash.hexdigest()
 
 
-def load_info(save_file):
-    return pickle.load(save_file)
+def load_info(path):
+    try:
+        with open(f'{path}/{INFO_NAME}.json', 'rb') as info_file:
+            data = json.load(info_file)
+    except FileNotFoundError:  # backwards compatibility
+        with open(f'{path}/{INFO_NAME}', 'rb') as info_file:
+            data = pickle.load(info_file)
+        logging.warning("%s/%s is a pickle file, converting to json",
+                        path, INFO_NAME)
+        save_info(path, data)
+
+    return data
 
 
 def save_info(path, data_dict):
-    with open(path, 'wb') as save_file:
-        pickle.dump(data_dict, save_file, pickle.HIGHEST_PROTOCOL)
+    with open(path + '.json', 'w') as save_file:
+        # pickle.dump(data_dict, save_file, pickle.HIGHEST_PROTOCOL)
+        json.dump(data_dict, save_file, indent=4)
 
 
-INFO_NAME='.file_info'
+INFO_NAME = '.file_info'
 
 
 def find_info(opt):
     curr_dir = os.getcwd()
     parent = len(curr_dir.split('/'))
     while curr_dir != '/' and parent > opt.max_parent:
-        try:
-            return open(f'{curr_dir}/{INFO_NAME}', 'rb'), curr_dir
-        except FileNotFoundError:
+        if os.path.exists(f'{curr_dir}/{INFO_NAME}'):
+            return curr_dir
+        else:
             # file not found, search parent directory
             curr_dir = '/'.join(curr_dir.split('/')[:-1])
             parent -= 1
@@ -50,7 +62,8 @@ def find_info(opt):
 
 
 def print_info(info_dict):
-    print(f"{info_dict['fname']} ({info_dict['date']}): {info_dict['note']}")
+    print(f"{info_dict['fname']} ({info_dict['date']}):"
+          f" {info_dict['note']}")
 
 
 def process_single(fname, info):
@@ -86,9 +99,12 @@ if __name__ == "__main__":
     parser.add_argument('--all', '-p', action='store_true')
     args = parser.parse_args()
 
+    FORMAT = '%(message)s [%(levelno)s-%(asctime)s %(module)s:%(funcName)s]'
+    logging.basicConfig(level=logging.WARNING, format=FORMAT)
+
     try:
-        info_file, path = find_info(args)
-        info = load_info(info_file)
+        load_path = find_info(args)
+        info = load_info(load_path)
         if args.all:
             for f_hash in info:
                 dat = info[f_hash]
@@ -100,13 +116,13 @@ if __name__ == "__main__":
             sys.exit()
 
         info = {}
-        path = f'.'
+        load_path = f'.'
 
     if args.fname is None:
         sys.exit()
 
-    path = '/'.join([path, INFO_NAME])
+    load_path = '/'.join([load_path, INFO_NAME])
     for fname in args.fname:
         info = process_single(fname, info)
 
-    save_info(path, info)
+    save_info(load_path, info)
