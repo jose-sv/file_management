@@ -82,7 +82,19 @@ def process_single(fname, info):
         print_info(info[f_sum])
     new_file = dict()
     new_file['date'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    new_file['note'] = args.note or input('Enter note: ')
+    try:
+        new_file['note'] = args.note or input('Enter note: ')
+    except KeyboardInterrupt:
+        logging.info('Caught kb interrupt, skipping')
+        return info
+    while new_file['note'] == "":
+        logging.warning('Blank note not allowed')
+        try:
+            new_file['note'] = args.note or input('Enter note: ')
+        except KeyboardInterrupt:
+            logging.info('Caught kb interrupt, skipping')
+            return info
+
     new_file['fname'] = fname
     info[f_sum] = new_file
 
