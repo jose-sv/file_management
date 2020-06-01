@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''Versioning and management of files'''
 import pickle
 import hashlib
@@ -66,24 +67,39 @@ def print_info(info_dict):
           f" {info_dict['note']}")
 
 
-def process_single(fname, info):
+def process_single(info, fname=None, hash_val=None):
+    assert(fname is not None or hash_val is not None), 'fname or hash missing'
+
     if not args.add:  # quit if found
         try:
-            search_res = info[calc_sum(fname)]
+            if hash_val is None:  # prefer hashval to fname if both given
+                search_res = info[calc_sum(fname)]
+            else:
+                search_res = info[hash_val]
             print_info(search_res)
             return info
         except KeyError:  # search failed, add?
-            ans = input(f'{fname} not found in list, add? [Y/n]') or 'y'
+            missing = hash_val or fname
+            ans = input(f'{missing} not found in list, add? [Y/n]') or 'y'
             if ans.capitalize() != 'Y':
                 return info
 
-    f_sum = calc_sum(fname)
+    f_sum = hash_val or calc_sum(fname)
     if f_sum in info:
         print_info(info[f_sum])
     new_file = dict()
     new_file['date'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    new_file['note'] = args.note or input('Enter note: ')
-    new_file['fname'] = fname
+    new_file['note'] = ""
+    while new_file['note'] == "":
+        try:
+            new_file['note'] = args.note or input('Enter note: ')
+            if new_file['note'] == "":
+                logging.warning('Blank note not allowed')
+        except KeyboardInterrupt:
+            logging.info('Caught kb interrupt, skipping')
+            return info
+
+    new_file['fname'] = fname or input('File name:')
     info[f_sum] = new_file
 
     return info
@@ -93,6 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('fname', nargs='*', help='File to version')
+    parser.add_argument('--hash', '-s', nargs='*', help='hash to search for')
     parser.add_argument('--max_parent', '-m', default=-1)
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
     parser.add_argument('--note', '-n', default='')
@@ -123,6 +140,10 @@ if __name__ == "__main__":
 
     load_path = '/'.join([load_path, INFO_NAME])
     for fname in args.fname:
-        info = process_single(fname, info)
+        info = process_single(info, fname=fname)
+
+    if args.hash is not None:
+        for hash_val in args.hash:
+            info = process_single(info, hash_val=hash_val)
 
     save_info(load_path, info)
