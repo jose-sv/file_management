@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 '''Versioning and management of files'''
-import pickle
 import hashlib
 import argparse
 import os
@@ -13,10 +12,10 @@ import readline  # used for nice input handling
 BLOCK_SIZE = 65536  # The size of each read from the file
 
 
-def calc_sum(fname):
+def calc_sum(file_name):
     '''load and read through the file in blocks to calculate hash'''
     file_hash = hashlib.sha256()  # Create the hash object
-    with open(fname, 'rb') as f:  # Open the file to read it's bytes
+    with open(file_name, 'rb') as f:  # Open the file to read it's bytes
         fb = f.read(BLOCK_SIZE)  # Read from the file.
         while len(fb) > 0:  # While there is still data being read from the file
             file_hash.update(fb)  # Update the hash
@@ -31,9 +30,10 @@ def load_info(path):
             data = json.load(info_file)
     except FileNotFoundError:  # backwards compatibility
         with open(f'{path}/{INFO_NAME}', 'rb') as info_file:
+            import pickle
             data = pickle.load(info_file)
-        logging.warning("%s/%s is a pickle file, converting to json",
-                        path, INFO_NAME)
+            logging.warning("%s/%s is a pickle file, converting to json",
+                            path, INFO_NAME)
         save_info(path, data)
 
     return data
@@ -67,42 +67,52 @@ def print_info(info_dict):
           f" {info_dict['note']}")
 
 
-def process_single(info, fname=None, hash_val=None):
-    assert(fname is not None or hash_val is not None), 'fname or hash missing'
+def process_single(file_info, add_policy, file_name=None, hash_val=None):
+    assert(file_name is not None or hash_val is not None), 'missing name or ' \
+                                                           'hash'
 
-    if not args.add:  # quit if found
+    # if explicitly adding/editing, skip print of original values
+    if add_policy != 'add':
         try:
-            if hash_val is None:  # prefer hashval to fname if both given
-                search_res = info[calc_sum(fname)]
+            # prefer hashval to file_name if both given (skip computation)
+            if hash_val is None:
+                search_res = file_info[calc_sum(file_name)]
             else:
-                search_res = info[hash_val]
+                search_res = file_info[hash_val]
             print_info(search_res)
-            return info
-        except KeyError:  # search failed, add?
-            missing = hash_val or fname
-            ans = input(f'{missing} not found in list, add? [Y/n]') or 'y'
-            if ans.capitalize() != 'Y':
-                return info
+            return False, file_info
 
-    f_sum = hash_val or calc_sum(fname)
-    if f_sum in info:
-        print_info(info[f_sum])
+        except KeyError:  # search failed, add?
+            missing = hash_val or file_name
+            if add_policy == 'skip':  # explicitly skipping; don't ask
+                print(f'{missing} not found')
+                return False, file_info
+
+            if add_policy == 'ask':  # unclear, ask
+                ans = input(f'{missing} not found in list, add? [Y/n]') or 'y'
+                if ans.capitalize() != 'Y':
+                    return False, file_info
+
+    f_sum = hash_val or calc_sum(file_name)
     new_file = dict()
     new_file['date'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    new_file['note'] = ""
+    new_file['note'] = args.note or ""
     while new_file['note'] == "":
         try:
-            new_file['note'] = args.note or input('Enter note: ')
+            new_file['note'] = input('Enter note: ')
             if new_file['note'] == "":
                 logging.warning('Blank note not allowed')
         except KeyboardInterrupt:
-            logging.info('Caught kb interrupt, skipping')
-            return info
+            logging.info('Skipping')
+            return False, file_info
 
-    new_file['fname'] = fname or input('File name:')
-    info[f_sum] = new_file
+    if file_name is not None:  # trim path
+        file_name = file_name.split('/')[-1]
+    # if hash given, prompt for file name
+    new_file['fname'] = file_name or input('File name:')
+    file_info[f_sum] = new_file
 
-    return info
+    return True, file_info
 
 
 if __name__ == "__main__":
@@ -114,10 +124,13 @@ if __name__ == "__main__":
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
     parser.add_argument('--note', '-n', default='')
     parser.add_argument('--all', '-p', action='store_true')
+    parser.add_argument('--no-add', '-o', action='store_true')
     args = parser.parse_args()
 
     FORMAT = '%(message)s [%(levelno)s-%(asctime)s %(module)s:%(funcName)s]'
     logging.basicConfig(level=logging.WARNING, format=FORMAT)
+
+    changed = False  # conditional save
 
     try:
         load_path = find_info(args)
@@ -133,17 +146,20 @@ if __name__ == "__main__":
             sys.exit()
 
         info = {}
+        changed = True
         load_path = f'.'
 
     if args.fname is None:
         sys.exit()
 
     load_path = '/'.join([load_path, INFO_NAME])
+    policy = 'skip' if args.no_add else 'add' if args.add else 'ask'
     for fname in args.fname:
-        info = process_single(info, fname=fname)
+        changed, info = process_single(info, policy, file_name=fname)
 
     if args.hash is not None:
-        for hash_val in args.hash:
-            info = process_single(info, hash_val=hash_val)
+        for h_val in args.hash:
+            changed, info = process_single(info, policy, hash_val=h_val)
 
-    save_info(load_path, info)
+    if changed:
+        save_info(load_path, info)
