@@ -144,8 +144,11 @@ if __name__ == "__main__":
                 print_info(dat, None)
 
     except FileNotFoundError:
-        ans = input(f'{INFO_NAME} not found, generate? [Y/n]') or 'y'
-        if ans.capitalize() != 'Y':
+        try:
+            ans = input(f'{INFO_NAME} not found, generate? [Y/n]') or 'y'
+            if ans.capitalize() != 'Y':
+                sys.exit()
+        except KeyboardInterrupt:
             sys.exit()
 
         info = {}
@@ -158,11 +161,17 @@ if __name__ == "__main__":
     load_path = '/'.join([load_path, INFO_NAME])
     policy = 'skip' if args.no_add else 'add' if args.add else 'ask'
     for fname in args.fname:
-        changed, info = process_single(info, policy, file_name=fname)
+        try:
+            changed, info = process_single(info, policy, file_name=fname)
+        except KeyboardInterrupt:
+            sys.exit()
 
     if args.hash is not None:
         for h_val in args.hash:
-            changed, info = process_single(info, policy, hash_val=h_val)
+            try:
+                changed, info = process_single(info, policy, hash_val=h_val)
+            except KeyboardInterrupt:
+                sys.exit()
 
     if changed:
         save_info(load_path, info)
