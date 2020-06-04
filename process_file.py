@@ -62,8 +62,11 @@ def find_info(opt):
     raise FileNotFoundError
 
 
-def print_info(info_dict):
-    print(f"{info_dict['fname']} ({info_dict['date']}):"
+def print_info(info_dict, file_name):
+    name = info_dict['fname']
+    if file_name is not None and file_name != name:
+        name = f'{file_name} -> {name}'
+    print(f"{name} ({info_dict['date']}):"
           f" {info_dict['note']}")
 
 
@@ -79,7 +82,7 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
                 search_res = file_info[calc_sum(file_name)]
             else:
                 search_res = file_info[hash_val]
-            print_info(search_res)
+            print_info(search_res, file_name)
             return False, file_info
 
         except KeyError:  # search failed, add?
@@ -138,7 +141,7 @@ if __name__ == "__main__":
         if args.all:
             for f_hash in info:
                 dat = info[f_hash]
-                print_info(dat)
+                print_info(dat, None)
 
     except FileNotFoundError:
         ans = input(f'{INFO_NAME} not found, generate? [Y/n]') or 'y'
