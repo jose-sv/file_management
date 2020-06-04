@@ -82,11 +82,11 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
                 search_res = file_info[calc_sum(file_name)]
             else:
                 search_res = file_info[hash_val]
-            print_info(search_res, file_name)
+            print_info(search_res, file_name.split('/')[-1])
             return False, file_info
 
         except KeyError:  # search failed, add?
-            missing = hash_val or file_name
+            missing = hash_val or file_name.split('/')[-1]
             if add_policy == 'skip':  # explicitly skipping; don't ask
                 print(f'{missing} not found')
                 return False, file_info
