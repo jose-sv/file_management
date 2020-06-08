@@ -82,7 +82,8 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
                 search_res = file_info[calc_sum(file_name)]
             else:
                 search_res = file_info[hash_val]
-            print_info(search_res, file_name.split('/')[-1])
+            name = None if file_name is None else file_name.split('/')[-1]
+            print_info(search_res, name)
             return False, file_info
 
         except KeyError:  # search failed, add?
