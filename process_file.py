@@ -157,12 +157,14 @@ if __name__ == "__main__":
                 print_info(dat, None)
 
     except FileNotFoundError:
-        try:
-            ans = input(f'{INFO_NAME} not found, generate? [Y/n]') or 'y'
-            if ans.capitalize() != 'Y':
+        if not args.new_index:
+            try:
+                ans = input(f'{INFO_NAME} not found, generate in cwd? [Y/n]') \
+                      or 'y'
+                if ans.capitalize() != 'Y':
+                    sys.exit()
+            except KeyboardInterrupt:
                 sys.exit()
-        except KeyboardInterrupt:
-            sys.exit()
 
         info = {}
         changed = True
