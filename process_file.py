@@ -58,7 +58,6 @@ def find_info(opt):
         else:
             raise FileExistsError
     while curr_dir != '/' and upcount < max_parent:
-        print(curr_dir, upcount, max_parent)
         # give preference to json
         if os.path.exists(f'{curr_dir}/{INFO_NAME}'):
             return curr_dir
