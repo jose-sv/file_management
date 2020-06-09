@@ -52,6 +52,11 @@ def find_info(opt):
     curr_dir = os.getcwd()
     max_parent = opt.max_parent or len(curr_dir.split('/'))
     upcount = 0
+    if opt.new_file:
+        if not os.path.exists(f'{curr_dir}/{INFO_NAME}'):
+            return curr_dir
+        else:
+            raise FileExistsError
     while curr_dir != '/' and upcount < max_parent:
         print(curr_dir, upcount, max_parent)
         # give preference to json
@@ -131,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('fname', nargs='*', help='File to version')
     parser.add_argument('--hash', '-s', nargs='*', help='hash to search for')
     parser.add_argument('--max_parent', '-m', default=None, type=int)
+    parser.add_argument('--new_file', actio='store_true')
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
     parser.add_argument('--note', '-n', default='')
     parser.add_argument('--all', '-p', action='store_true')
