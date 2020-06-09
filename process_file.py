@@ -26,10 +26,10 @@ def calc_sum(file_name):
 
 def load_info(path):
     try:
-        with open(f'{path}/{INFO_NAME}.json', 'rb') as info_file:
+        with open(f'{path}/{INFO_NAME}', 'rb') as info_file:
             data = json.load(info_file)
     except FileNotFoundError:  # backwards compatibility
-        with open(f'{path}/{INFO_NAME}', 'rb') as info_file:
+        with open(f'{path}/.{INFO_NAME.split(".")[1]}', 'rb') as info_file:
             import pickle
             data = pickle.load(info_file)
             logging.warning("%s/%s is a pickle file, converting to json",
