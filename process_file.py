@@ -52,7 +52,7 @@ def find_info(opt):
     curr_dir = os.getcwd()
     max_parent = opt.max_parent or len(curr_dir.split('/'))
     upcount = 0
-    if opt.new_file:
+    if opt.new_index:
         if not os.path.exists(f'{curr_dir}/{INFO_NAME}'):
             return curr_dir
         else:
