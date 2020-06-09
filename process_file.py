@@ -63,7 +63,7 @@ def find_info(opt):
         else:
             # file not found, search parent directory
             curr_dir = '/'.join(curr_dir.split('/')[:-1])
-            parent -= 1
+            upcount += 1
 
     raise FileNotFoundError
 
