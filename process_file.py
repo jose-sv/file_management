@@ -40,7 +40,7 @@ def load_info(path):
 
 
 def save_info(path, data_dict):
-    with open(path + '.json', 'w') as save_file:
+    with open(path, 'w') as save_file:
         # pickle.dump(data_dict, save_file, pickle.HIGHEST_PROTOCOL)
         json.dump(data_dict, save_file, indent=4)
 
