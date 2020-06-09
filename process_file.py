@@ -45,14 +45,18 @@ def save_info(path, data_dict):
         json.dump(data_dict, save_file, indent=4)
 
 
-INFO_NAME = '.file_info'
+INFO_NAME = '.file_info.json'
 
 
 def find_info(opt):
     curr_dir = os.getcwd()
     parent = len(curr_dir.split('/'))
     while curr_dir != '/' and parent > opt.max_parent:
+        # give preference to json
         if os.path.exists(f'{curr_dir}/{INFO_NAME}'):
+            return curr_dir
+        # but check if pickle exists
+        elif os.path.exists(f'{curr_dir}/.{INFO_NAME.split(".")[1]}'):
             return curr_dir
         else:
             # file not found, search parent directory
