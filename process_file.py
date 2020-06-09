@@ -136,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('fname', nargs='*', help='File to version')
     parser.add_argument('--hash', '-s', nargs='*', help='hash to search for')
     parser.add_argument('--max_parent', '-m', default=None, type=int)
-    parser.add_argument('--new_file', actio='store_true')
+    parser.add_argument('--new_index', action='store_true')
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
     parser.add_argument('--note', '-n', default='')
     parser.add_argument('--all', '-p', action='store_true')
