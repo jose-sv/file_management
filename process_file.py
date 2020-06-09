@@ -50,8 +50,10 @@ INFO_NAME = '.file_info.json'
 
 def find_info(opt):
     curr_dir = os.getcwd()
-    parent = len(curr_dir.split('/'))
-    while curr_dir != '/' and parent > opt.max_parent:
+    max_parent = opt.max_parent or len(curr_dir.split('/'))
+    upcount = 0
+    while curr_dir != '/' and upcount < max_parent:
+        print(curr_dir, upcount, max_parent)
         # give preference to json
         if os.path.exists(f'{curr_dir}/{INFO_NAME}'):
             return curr_dir
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('fname', nargs='*', help='File to version')
     parser.add_argument('--hash', '-s', nargs='*', help='hash to search for')
-    parser.add_argument('--max_parent', '-m', default=-1)
+    parser.add_argument('--max_parent', '-m', default=None, type=int)
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
     parser.add_argument('--note', '-n', default='')
     parser.add_argument('--all', '-p', action='store_true')
