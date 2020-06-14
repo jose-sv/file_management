@@ -17,7 +17,7 @@ def calc_sum(file_name):
     file_hash = hashlib.sha256()  # Create the hash object
     with open(file_name, 'rb') as f:  # Open the file to read it's bytes
         fb = f.read(BLOCK_SIZE)  # Read from the file.
-        while len(fb) > 0:  # While there is still data being read from the file
+        while len(fb) > 0:  # While there is data being read from the file
             file_hash.update(fb)  # Update the hash
             fb = f.read(BLOCK_SIZE)  # Read the next block from the file
 
@@ -111,7 +111,16 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
             print(f"Cannot handle {file_name}, it's a directory")
             return False, file_info
 
-    f_sum = hash_val or calc_sum(file_name)
+        except FileNotFoundError:
+            print(f'{file_name} not found. Check the path and try again.')
+            return False, file_info
+
+    try:
+        f_sum = hash_val or calc_sum(file_name)
+    except FileNotFoundError:
+        print(f'{file_name} not found. Check the path and try again.')
+        return False, file_info
+
     new_file = dict()
     new_file['date'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     new_file['note'] = args.note or ""
