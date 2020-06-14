@@ -107,6 +107,10 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
                 if ans.capitalize() != 'Y':
                     return False, file_info
 
+        except IsADirectoryError:
+            print(f"Cannot handle {file_name}, it's a directory")
+            return False, file_info
+
     f_sum = hash_val or calc_sum(file_name)
     new_file = dict()
     new_file['date'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
