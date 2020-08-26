@@ -57,6 +57,7 @@ def find_info(opt):
             return curr_dir
         else:
             raise FileExistsError
+
     while curr_dir != '/' and upcount < max_parent:
         # give preference to json
         if os.path.exists(f'{curr_dir}/{INFO_NAME}'):
@@ -80,7 +81,7 @@ def print_info(info_dict, file_name):
           f" {info_dict['note']}")
 
 
-def process_single(file_info, add_policy, file_name=None, hash_val=None):
+def process_single(file_info, add_policy, quiet, file_name=None, hash_val=None):
     assert(file_name is not None or hash_val is not None), 'missing name or ' \
                                                            'hash'
 
@@ -98,7 +99,7 @@ def process_single(file_info, add_policy, file_name=None, hash_val=None):
 
         except KeyError:  # search failed, add?
             missing = hash_val or file_name.split('/')[-1]
-            if add_policy == 'skip':  # explicitly skipping; don't ask
+            if add_policy == 'skip' and not quiet:  # explicitly skipping; don't ask
                 print(f'{missing} not found')
                 return False, file_info
 
@@ -146,13 +147,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('fname', nargs='*', help='File to version')
-    parser.add_argument('--hash', '-s', nargs='*', help='hash to search for')
-    parser.add_argument('--max_parent', '-m', default=None, type=int)
-    parser.add_argument('--new_index', action='store_true')
+    parser.add_argument('--hash', '-s', nargs='*', help='search by hash')
+    parser.add_argument('--max_parent', '-m', default=None, type=int,
+                        help='Number of directories to search up for index')
+    parser.add_argument('--new_index', action='store_true',
+                        help='Create a new index; fail if one exists')
     parser.add_argument('--add', '-a', action='store_true', help='Add or edit')
-    parser.add_argument('--note', '-n', default='')
-    parser.add_argument('--all', '-p', action='store_true')
-    parser.add_argument('--no-add', '-o', action='store_true')
+    parser.add_argument('--note', '-n', default='',
+                        help='Set file note to this')
+    parser.add_argument('--all', '-p', action='store_true',
+                        help='Display all saved data')
+    parser.add_argument('--no-add', '-o', action='store_true',
+                        help="Don't add file to list if it's not found")
+    parser.add_argument('--quiet', '-q', action='store_true',
+                        help="Don't warn if file is not found in list")
     args = parser.parse_args()
 
     FORMAT = '%(message)s [%(levelno)s-%(asctime)s %(module)s:%(funcName)s]'
@@ -189,14 +197,16 @@ if __name__ == "__main__":
     policy = 'skip' if args.no_add else 'add' if args.add else 'ask'
     for fname in args.fname:
         try:
-            changed, info = process_single(info, policy, file_name=fname)
+            changed, info = process_single(info, policy, args.quiet,
+                                           file_name=fname)
         except KeyboardInterrupt:
             sys.exit()
 
     if args.hash is not None:
         for h_val in args.hash:
             try:
-                changed, info = process_single(info, policy, hash_val=h_val)
+                changed, info = process_single(info, policy, args.quiet,
+                                               hash_val=h_val)
             except KeyboardInterrupt:
                 sys.exit()
 
