@@ -99,8 +99,9 @@ def process_single(file_info, add_policy, quiet, file_name=None, hash_val=None):
 
         except KeyError:  # search failed, add?
             missing = hash_val or file_name.split('/')[-1]
-            if add_policy == 'skip' and not quiet:  # explicitly skipping; don't ask
-                print(f'{missing} not found')
+            if add_policy == 'skip':  # explicitly skipping; don't ask
+                if not quiet:
+                    print(f'{missing} not found')
                 return False, file_info
 
             if add_policy == 'ask':  # unclear, ask
